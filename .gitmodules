@@ -1,0 +1,6 @@
+[submodule "djinni-support-lib"]
+	path = djinni-support-lib
+	url = https://github.com/dyp/djinni-support-lib.git
+[submodule "djinni-generator"]
+	path = djinni-generator
+	url = https://github.com/cross-language-cpp/djinni-generator.git

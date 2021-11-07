@@ -18,3 +18,5 @@ dev_tests/5_CSR.py
 dev_tests/__init__.py
 docs/_build/
 docs/_sources
+project
+generated
