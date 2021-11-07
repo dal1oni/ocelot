@@ -1,0 +1,13 @@
+CoreType = enum {
+	single;
+	multithreaded;
+	cuda;
+	mpi;
+}
+
+Wave = interface +c {
+	static createWave(type: CoreType): Wave;
+
+	prop();
+}
+
