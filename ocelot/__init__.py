@@ -34,7 +34,6 @@ __all__ = ['Twiss', "Beam", "Particle", "get_current", "get_envelope", "generate
             "MagneticLattice", "merger",            # magnetic_lattice
             "np", # numpy
 
-
            ]
 
 import numpy as np
@@ -54,6 +53,7 @@ from ocelot.cpbd.sc import *
 from ocelot.cpbd.csr import *
 from ocelot.cpbd.wake3D import *
 from ocelot.cpbd.physics_proc import *
+from ocelot.djinni.Wave import *
 
 
 print('initializing ocelot...')

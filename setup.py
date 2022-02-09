@@ -52,6 +52,7 @@ class CMakeBuild(build_ext):
                 '-DDJINNI_WITH_OBJC=OFF',
                 '-DDJINNI_WITH_JNI=OFF',
                 '-DDJINNI_BUILD_TESTING=OFF',
+                '-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON'
             ]
 
             if platform.system() == 'Windows':
@@ -89,6 +90,8 @@ for pkg in find_packages():
         pkg = "ocelot." + pkg
     all_packages.append(pkg)
 
+all_packages.append('djinni')
+all_packages.append('ocelot.djinni');
 
 setup(
     name='ocelot',
@@ -98,7 +101,11 @@ setup(
     author_email='tomin.sergey@gmail.com',
     url='https://github.com/ocelot-collab/ocelot',
     packages=all_packages,
-    package_dir={'ocelot.demos': 'demos'},  ## install examples along with the rest of the source
+    package_dir={
+        'ocelot.demos': 'demos',
+         'djinni' : 'djinni-support-lib/djinni/py/djinni',
+         'ocelot.djinni' : 'generated/ocelot/djinni/py'
+         },  ## install examples along with the rest of the source
     install_requires=[
         'numpy', 'scipy', 'matplotlib', 'pandas', 'cffi', 'future'
     ],

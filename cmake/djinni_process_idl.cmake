@@ -51,8 +51,10 @@ macro(djinni_process_idl)
     set(djinni_args
         --idl "../${_idldef_DJINNI_IDL_FILE}"
         --py-out ${arg_py_out}
+        --py-import-prefix "${_idldef_PYTHON_PACKAGE}.djinni."
         --pycffi-out ${arg_pycffi_out}
-        --pycffi-package-name ${_idldef_PYTHON_PACKAGE}
+        --pycffi-package-name PyCFFIlib
+        --pycffi-dynamic-lib-list ${_idldef_PYTHON_PACKAGE}
         --c-wrapper-out ${arg_cwrapper_out}
         --c-wrapper-header-out ${arg_cwrapper_header_out}
         --cpp-out ${arg_cpp_out}
