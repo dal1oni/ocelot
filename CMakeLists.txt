@@ -60,5 +60,6 @@ add_library(ocelot
 target_include_directories(ocelot PUBLIC generated/include)
 target_include_directories(ocelot PUBLIC generated/include/ocelot/djinni/cpp)
 target_include_directories(ocelot PUBLIC generated/include/ocelot/djinni/c-wrapper)
+target_include_directories(ocelot PUBLIC eigen)
 
 target_link_libraries(ocelot PUBLIC djinni-support-lib::djinni-support-lib)

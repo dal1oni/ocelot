@@ -7,7 +7,7 @@ CoreType = enum {
 
 Wave = interface +c {
 	static createWave(type: CoreType): Wave;
+	static undulator_field_dfl_MP_int(kx: binary, ky: binary, Ny: i32, Nx: i32, z: f32, L_w: f32, E_ph: i32, N_b: i32, N_e: i32, sig_x: f32, sig_y: f32, sig_xp: f32, sig_yp: f32, C: f32, approximation: string, mode: string): binary;
 
 	prop();
 }
-

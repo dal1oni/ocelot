@@ -5,6 +5,7 @@ wave optics
 from numpy import random
 from numpy.linalg import norm
 import numpy as np
+import ocelot.djinni.Wave as w
 from math import factorial
 from numpy import inf, complex128, complex64
 import scipy
@@ -1681,12 +1682,20 @@ def undulator_field_far(theta_x, theta_y, l_x, l_y, eta_x, eta_y, z, L_w, E_ph, 
     E = -np.sinc(L_w * C / 2 + L_w * w * ((theta_x - (l_x/z_0) - eta_x)**2 + (
                             theta_y - (l_y/z_0) - eta_y)**2) / 4 /speed_of_light / np.pi) * np.exp(
                             1j * w  * z_0 * ((theta_x - (l_x/z_0))**2 + (theta_y - (l_y/z_0))**2) / 2 / speed_of_light)
+
+    q = np.sinc(L_w * C / 2 + L_w * w * ((theta_x - (l_x/z_0) - eta_x)**2 + (
+                            theta_y - (l_y/z_0) - eta_y)**2) / 4 /speed_of_light / np.pi)
+
+    p = np.exp(1j * w  * z_0 * ((theta_x - (l_x/z_0))**2 + (theta_y - (l_y/z_0))**2) / 2 / speed_of_light)
+
+    print(p.dtype)
+
     if phi != None:
         _logger.debug(ind_str + 'adding a random phase to the field')
         E = E * np.exp(1j * phi)
-    
+
     _logger.debug(ind_str + 'done in {:.2f} seconds'.format(time.time() - start_time))
-    return E        
+    return E
 
 def undulator_field_near(x, y, l_x, l_y, eta_x, eta_y, z, L_w, E_ph, phi=None):
     '''
@@ -1915,25 +1924,38 @@ def undulator_field_dfl_MP(dfl, z, L_w, E_ph, N_b=1, N_e=1, sig_x=0, sig_y=0, si
 
     if approximation == 'near_field':
         dfl.to_domain(domains='sf', indexing='ij') 
-        x = dfl.scale_kx()
-        y = dfl.scale_ky()
-        x, y = np.meshgrid(x, y)    
+        kx = dfl.scale_kx()
+        ky = dfl.scale_ky()
     elif approximation == 'far_field':
         dfl.to_domain(domains='sf', indexing='ij') 
         kx = dfl.scale_x()/z
         ky = dfl.scale_y()/z
-        theta_x, theta_y  = np.meshgrid(kx, ky)
     else: 
         _logger.error(ind_str + '"approximation" must be whether "near_field" of "far_field"')
         raise AttributeError('"approximation" must be whether "near_field" of "far_field"')
-  
+ 
     if seed != None:
         random.seed(seed)
         _logger.info('seed is {}'.format(seed))
-    
+
     if C != 0:
         _logger.warning(ind_str + 'resonance detuning C has not implemented for the near field calculations')
 
+    _logger.debug('dfl.shape() = [{0}, {1}]'.format(dfl.shape()[1], dfl.shape()[2]))
+    _logger.debug('N_b = {0}, N_e = {1}'.format(N_b, N_e))
+    E_list = undulator_field_dfl_MP_int(kx, ky, dfl.shape()[1], dfl.shape()[2], z, L_w, E_ph, N_b, N_e, sig_x, sig_y, sig_xp, sig_yp, C, approximation, mode)
+
+    E_list = np.array(E_list)
+    dfl.fld = E_list
+
+    _logger.info(ind_str + 'undulator field calculated in {:.2f} seconds'.format(time.time() - start_time))
+
+    return dfl
+
+def undulator_field_dfl_MP_int(kx, ky, Ny, Nx, z, L_w, E_ph, N_b, N_e, sig_x, sig_y, sig_xp, sig_yp, C, approximation, mode):
+    x, y = np.meshgrid(kx, ky)
+
+    b = w.Wave.undulator_field_dfl_MP_int(kx.tobytes(), ky.tobytes(), Ny, Nx, z, L_w, E_ph, N_b, N_e, sig_x, sig_y, sig_xp, sig_yp, C, approximation, mode);
     E_list = []   
     for bunch in range(N_b):
         l_x   = np.random.normal(0, sig_x, (N_e))
@@ -1941,15 +1963,15 @@ def undulator_field_dfl_MP(dfl, z, L_w, E_ph, N_b=1, N_e=1, sig_x=0, sig_y=0, si
         l_y   = np.random.normal(0, sig_y, (N_e))
         eta_y = np.random.normal(0, sig_yp, (N_e))
         phi = np.random.uniform(low=0, high=2*np.pi, size=N_e)
-        
-        E = np.zeros((dfl.shape()[1], dfl.shape()[2]))
+
+        E = np.zeros((Ny, Nx))
         i=0
         for l_xi, l_yi, eta_xi, eta_yi, phi_i in zip(l_x, l_y, eta_x, eta_y, phi):
             if approximation == 'far_field':
                 if mode == 'incoh':
-                    E = E + undulator_field_far(theta_x, theta_y, l_xi, l_yi, eta_xi, eta_yi, z, L_w=L_w, E_ph=E_ph, phi=phi_i, C=C)   
+                    E = E + undulator_field_far(x, y, l_xi, l_yi, eta_xi, eta_yi, z, L_w=L_w, E_ph=E_ph, phi=phi_i, C=C)   
                 elif mode == 'coh':
-                    E = E + undulator_field_far(theta_x, theta_y, l_xi, l_yi, eta_xi, eta_yi, z, L_w=L_w, E_ph=E_ph, C=C)
+                    E = E + undulator_field_far(x, y, l_xi, l_yi, eta_xi, eta_yi, z, L_w=L_w, E_ph=E_ph, C=C)
             elif approximation == 'near_field':
                 if mode == 'incoh':
                     E = E + undulator_field_near(x, y, l_xi, l_yi, eta_xi, eta_yi, z, L_w=L_w, E_ph=E_ph, phi=phi_i)
@@ -1958,21 +1980,16 @@ def undulator_field_dfl_MP(dfl, z, L_w, E_ph, N_b=1, N_e=1, sig_x=0, sig_y=0, si
             else: 
                 _logger.error(ind_str + 'attribute "method" must be "far_field" or "near_field"')
                 raise AttributeError('attribute "method" must be "far_field" or "near_field"')
-            
+
             if N_b == 1:
                 i = i + 1
                 _logger.info(ind_str + 'electrons simulated = {0} out of {1}'.format(i, N_e))
-        
+
         E = E/N_e
         E_list.append(E)
         _logger.info(ind_str + 'realizations number = {0} out of {1}'.format(bunch + 1, N_b))
-    
-    E_list = np.array(E_list)
-    dfl.fld = E_list
 
-    _logger.info(ind_str + 'undulator field calculated in {:.2f} seconds'.format(time.time() - start_time))
-
-    return dfl
+    return E_list
 
 def undulator_field_dfl_SERVAL(dfl, L_w, sig_x=0, sig_y=0, sig_xp=0, sig_yp=0, k_support = 'intensity', s_support='intensity', showfig=False, seed=None):
     
@@ -1997,7 +2014,7 @@ def undulator_field_dfl_SERVAL(dfl, L_w, sig_x=0, sig_y=0, sig_xp=0, sig_yp=0, k
     elif s_support == 'amplitude':
         _logger.info(ind_str +'s_support == "amplitude"')
         mask_xy = scipy.signal.fftconvolve(mask_xy_radiation, mask_xy_ebeam, mode='same')
-    elif s_support == '"beam':
+    elif s_support == 'beam':
         _logger.info(ind_str +'s_support == "beam"')
         mask_xy = mask_xy_ebeam
     else:
@@ -2028,7 +2045,7 @@ def undulator_field_dfl_SERVAL(dfl, L_w, sig_x=0, sig_y=0, sig_xp=0, sig_yp=0, k
         _logger.info(ind_str +'k_support == "amplitude"')
         mask_kxky = scipy.signal.fftconvolve(mask_kxky_ebeam, mask_kxky_radiation, mode='same')
         mask_kxky /= np.sum(mask_kxky)
-    elif k_support == 'amplitude':
+    elif k_support == 'beam':
         _logger.info(ind_str +'k_support == "beam"')
         mask_kxky = mask_kxky_ebeam
     else:

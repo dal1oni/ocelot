@@ -42,7 +42,8 @@ class CMakeBuild(build_ext):
         for ext in self.extensions:
 
             extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
-            cfg = 'Debug' if _get_env_variable('DISPTOOLS_DEBUG') == 'ON' else 'Release'
+#            cfg = 'Debug' if _get_env_variable('DISPTOOLS_DEBUG') == 'ON' else 'Release'
+            cfg = 'Debug'
 
             cmake_args = [
                 '-DCMAKE_BUILD_TYPE=%s' % cfg,
@@ -92,6 +93,8 @@ for pkg in find_packages():
 
 all_packages.append('djinni')
 all_packages.append('ocelot.djinni');
+
+print("all_packages = " + (' '.join(all_packages)))
 
 setup(
     name='ocelot',

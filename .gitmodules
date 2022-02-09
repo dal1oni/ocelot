@@ -4,3 +4,6 @@
 [submodule "djinni-generator"]
 	path = djinni-generator
 	url = https://github.com/cross-language-cpp/djinni-generator.git
+[submodule "eigen"]
+	path = eigen
+	url = https://gitlab.com/libeigen/eigen.git
