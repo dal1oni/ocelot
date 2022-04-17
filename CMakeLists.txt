@@ -6,8 +6,6 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include(cmake/djinni_process_idl.cmake)
 
-set (CMAKE_CXX_STANDARD 20)
-
 SET(DJINNI_CMD ${CMAKE_CURRENT_SOURCE_DIR}/djinni)
 set(DJINNI_EXECUTABLE ${CMAKE_CURRENT_SOURCE_DIR}/djinni)
 set(PYTHON_EXECUTABLE python3)
@@ -56,6 +54,8 @@ add_library(ocelot
     # our implementation
     src/wave.cpp
 )
+
+set_property (TARGET ocelot PROPERTY CXX_STANDARD 20)
 
 target_include_directories(ocelot PUBLIC generated/include)
 target_include_directories(ocelot PUBLIC generated/include/ocelot/djinni/cpp)

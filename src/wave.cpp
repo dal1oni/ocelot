@@ -18,7 +18,7 @@ namespace ocelot {
 
 class WaveSingle : public djinni::Wave {
 public:
-	~WaveSingle() = default;
+	~WaveSingle() override = default;
 
 	void prop() override {
 	}
@@ -61,6 +61,7 @@ using KMatrixType = Eigen::MatrixXd;
 
 class UndulatorField {
 public:
+    virtual ~UndulatorField() = default;
     virtual MatrixType calculate(const KMatrixType& x, const KMatrixType& y, float l_xi, float l_yi, float eta_xi, float eta_yi, float z, float l_w, int32_t E_ph, float C, std::optional<float> phi) = 0;
 };
 
@@ -106,12 +107,12 @@ MatrixType UndulatorFieldFar::calculate(const KMatrixType& theta_x, const KMatri
                 return d == 0 ? 1 : std::cos(d)/d;
             }).matrix()
                              * Eigen::exp(
-                            std::complex<double>(1.0j) * w  * z_0 * (Eigen::square(theta_x.array() - l_x/z_0) + Eigen::square(theta_y.array() - (l_y/z_0))).cast<std::complex<double>>() / 2 / speed_of_light).matrix();
+                            std::complex<double>(0.0, 1.0) * w  * z_0 * (Eigen::square(theta_x.array() - l_x/z_0) + Eigen::square(theta_y.array() - (l_y/z_0))).cast<std::complex<double>>() / 2 / speed_of_light).matrix();
     std::cerr << "c: E.rows() = " << E.rows() << "E.cols() = " << E.cols() << std::endl;
 
     if (phi) {
 //        _logger.debug(ind_str + 'adding a random phase to the field')
-        E *= std::exp(std::complex<double>(1.0j * (*phi)));
+        E *= std::exp(std::complex<double>(0.0, 1.0) * std::complex<double>(*phi));
     }
 /*
     lambda_w = 0.04
@@ -151,6 +152,7 @@ MatrixType UndulatorFieldNear::calculate(const KMatrixType& x, const KMatrixType
 
 class PhiProvider {
 public:
+    virtual ~PhiProvider() = default;
     virtual std::optional<float> phi() = 0;
 };
 
@@ -193,6 +195,20 @@ std::unique_ptr<PhiProvider> getPhiProvider(const std::string& mode, std::mt1993
     } else {
         throw std::logic_error("attribute 'mode' must be 'ihcos' or 'coh'");
     }
+}
+
+std::vector<uint8_t> Wave::mul(const std::vector<uint8_t> & _x, const std::vector<uint8_t> & _y) {
+    const size_t xSize = std::sqrt(_x.size()/16);
+    Eigen::Map<Eigen::MatrixXcd> x((std::complex<double> *)_x.data(), xSize, xSize);
+
+    const size_t ySize = std::sqrt(_y.size()/16);
+    Eigen::Map<Eigen::MatrixXcd> y((std::complex<double> *)_y.data(), ySize, ySize);
+
+    const Eigen::MatrixXcd r = x.matrix() * y.matrix();
+
+    std::vector<uint8_t> result(xSize * xSize * 16);
+    memcpy(result.data(), r.data(), xSize * xSize * 16);
+    return result;
 }
 
 std::vector<uint8_t> Wave::undulator_field_dfl_MP_int(const std::vector<uint8_t> & _kx, const std::vector<uint8_t> & _ky, int32_t Ny, int32_t Nx, float z, float L_w, int32_t E_ph, int32_t N_b, int32_t N_e, float sig_x, float sig_y, float sig_xp, float sig_yp, float C, const std::string & approximation, const std::string & mode) {
